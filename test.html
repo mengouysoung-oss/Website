@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cryptography Demo App</title>
+<style>
+body{
+    font-family: Arial;
+    background:#eef2f7;
+    text-align:center;
+    padding:20px;
+}
+.container{
+    background:white;
+    padding:20px;
+    width:550px;
+    margin:auto;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,0.2);
+}
+input, textarea, select, button{
+    width:90%;
+    padding:10px;
+    margin:6px;
+}
+.result{
+    font-weight:bold;
+    color:darkblue;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>🔐 Cryptography Demo (Classical + RSA)</h2>
+
+<select id="algo">
+<option value="caesar">Caesar Cipher</option>
+<option value="vigenere">Vigenère Cipher</option>
+<option value="rsa">RSA Demo</option>
+</select>
+
+<textarea id="text" placeholder="Enter text or number"></textarea>
+
+<input id="key1" placeholder="Key / Shift / p">
+<input id="key2" placeholder="Second key / q / keyword">
+<input id="key3" placeholder="e (for RSA)">
+
+<button onclick="encrypt()">Encrypt</button>
+<button onclick="decrypt()">Decrypt</button>
+
+<p class="result" id="output"></p>
+</div>
+
+<script>
+
+function mod(n,m){ return ((n%m)+m)%m; }
+
+// ---------- Caesar ----------
+function caesar(text,shift){
+    return text.replace(/[a-z]/gi,c=>{
+        let base=c<='Z'?65:97;
+        return String.fromCharCode(mod(c.charCodeAt(0)-base+shift,26)+base);
+    });
+}
+
+// ---------- Vigenere ----------
+function vigenere(text,key,enc=true){
+    key=key.toLowerCase();
+    let j=0;
+    return text.replace(/[a-z]/gi,c=>{
+        let base=c<='Z'?65:97;
+        let k=key.charCodeAt(j++%key.length)-97;
+        if(!enc) k=-k;
+        return String.fromCharCode(mod(c.charCodeAt(0)-base+k,26)+base);
+    });
+}
+
+// ---------- RSA ----------
+function gcd(a,b){ return b==0?a:gcd(b,a%b); }
+
+function modInverse(e,phi){
+    for(let d=1; d<phi; d++)
+        if((d*e)%phi==1) return d;
+}
+
+function modExp(base,exp,modn){
+    let result=1;
+    base%=modn;
+    while(exp>0){
+        if(exp%2==1) result=(result*base)%modn;
+        exp=Math.floor(exp/2);
+        base=(base*base)%modn;
+    }
+    return result;
+}
+
+function rsaEncrypt(m,p,q,e){
+    let n=p*q;
+    return modExp(m,e,n);
+}
+
+function rsaDecrypt(c,p,q,e){
+    let n=p*q;
+    let phi=(p-1)*(q-1);
+    let d=modInverse(e,phi);
+    return modExp(c,d,n);
+}
+
+// ---------- Main ----------
+function encrypt(){
+    let a=document.getElementById("algo").value;
+    let t=document.getElementById("text").value;
+    let k1=document.getElementById("key1").value;
+    let k2=document.getElementById("key2").value;
+    let k3=document.getElementById("key3").value;
+
+    if(a=="caesar")
+        output.innerText=caesar(t,parseInt(k1||0));
+    else if(a=="vigenere")
+        output.innerText=vigenere(t,k1,true);
+    else{
+        let c=rsaEncrypt(parseInt(t),parseInt(k1),parseInt(k2),parseInt(k3));
+        output.innerText="Cipher: "+c;
+    }
+}
+
+function decrypt(){
+    let a=document.getElementById("algo").value;
+    let t=document.getElementById("text").value;
+    let k1=document.getElementById("key1").value;
+    let k2=document.getElementById("key2").value;
+    let k3=document.getElementById("key3").value;
+
+    if(a=="caesar")
+        output.innerText=caesar(t,-parseInt(k1||0));
+    else if(a=="vigenere")
+        output.innerText=vigenere(t,k1,false);
+    else{
+        let m=rsaDecrypt(parseInt(t),parseInt(k1),parseInt(k2),parseInt(k3));
+        output.innerText="Message: "+m;
+    }
+}
+
+</script>
+
+</body>
+</html>
